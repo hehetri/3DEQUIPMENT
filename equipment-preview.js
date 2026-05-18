@@ -50,9 +50,9 @@ const ITEM_3D_TYPES = {
 
 const DEFAULT_CHARACTER = {
     bone: "hs_bone",
-    head: null,
-    body: "hs_trans_000",
-    arm: null
+    head: "hs_000_head",
+    body: "hs_000_body",
+    arm: "hs_000_arm"
 };
 
 /*
