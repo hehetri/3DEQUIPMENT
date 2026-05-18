@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>T-BOT Character Equipment Preview</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #dff6ff;
+            color: #102030;
+        }
+
+        .arsenal-page {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            background:
+                linear-gradient(
+                    to bottom,
+                    #31a8f4 0%,
+                    #75c8f7 28%,
+                    #dff6ff 64%,
+                    #ecffff 100%
+                );
+        }
+
+        .top-nav {
+            height: 72px;
+            background: #37aef8;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+            position: relative;
+            z-index: 20;
+        }
+
+        .nav-button {
+            border: none;
+            background: transparent;
+            font-size: 30px;
+            cursor: pointer;
+            width: 54px;
+            height: 54px;
+            border-radius: 14px;
+            transition: 0.15s ease;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.24);
+            transform: translateY(-1px);
+        }
+
+        .profile-header {
+            position: absolute;
+            top: 72px;
+            left: 0;
+            right: 0;
+            height: 120px;
+            z-index: 10;
+        }
+
+        .profile-orb {
+            position: absolute;
+            left: 42px;
+            top: -20px;
+            width: 142px;
+            height: 142px;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle at 25% 24%, #d7ff00 0%, transparent 34%),
+                radial-gradient(circle at 68% 35%, #9864ff 0%, transparent 36%),
+                radial-gradient(circle at 44% 76%, #ff8a22 0%, transparent 38%),
+                linear-gradient(135deg, #9eff00, #885cff 55%, #ff8422);
+            border: 8px solid white;
+            box-shadow: 0 9px 22px rgba(0, 0, 0, 0.24);
+            z-index: 2;
+        }
+
+        .nameplate {
+            position: absolute;
+            left: 160px;
+            right: 60px;
+            top: 4px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.88);
+            clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
+            display: flex;
+            align-items: center;
+            padding-left: 70px;
+            font-size: 38px;
+            font-weight: 800;
+            color: #0e1720;
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.12);
+            z-index: 1;
+        }
+
+        .edit-icon {
+            margin-left: 14px;
+            opacity: 0.55;
+            font-size: 25px;
+        }
+
+        .preview-message {
+            position: absolute;
+            top: 190px;
+            left: 30px;
+            right: 30px;
+            z-index: 10;
+            max-width: 850px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 14px 18px;
+            text-align: center;
+            font-size: 23px;
+            line-height: 1.35;
+            color: #1f2933;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        #equipmentPreview {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 245px;
+            bottom: 120px;
+            z-index: 1;
+            background-image: url("assets/ui/arsenal_stage.png");
+            background-repeat: no-repeat;
+            background-position: center bottom;
+            background-size: contain;
+        }
+
+        #equipmentPreview canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .glow-ground {
+            position: absolute;
+            left: 50%;
+            bottom: 105px;
+            transform: translateX(-50%);
+            width: 70%;
+            max-width: 760px;
+            height: 140px;
+            background: radial-gradient(
+                ellipse at center,
+                rgba(255, 255, 255, 0.55),
+                transparent 70%
+            );
+            filter: blur(18px);
+            opacity: 0.75;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .slot-dock {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 22px;
+            z-index: 30;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .slot-wrapper {
+            pointer-events: auto;
+            display: flex;
+            gap: 14px;
+            padding: 12px 18px;
+            border-radius: 28px;
+            background: rgba(234, 255, 255, 0.78);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+        }
+
+        .slot {
+            width: 84px;
+            height: 84px;
+            border-radius: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            background: linear-gradient(145deg, #2aa8ff, #168fe6);
+            cursor: pointer;
+            padding: 4px;
+            position: relative;
+            overflow: hidden;
+            color: white;
+            font-weight: bold;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.45),
+                0 8px 18px rgba(0, 0, 0, 0.22);
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+
+        .slot:hover {
+            transform: translateY(-3px);
+        }
+
+        .slot.active {
+            outline: 4px solid white;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.45),
+                0 0 0 3px rgba(44, 170, 255, 0.95),
+                0 10px 24px rgba(0, 0, 0, 0.24);
+        }
+
+        .slot img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .slot-label {
+            position: absolute;
+            left: 4px;
+            right: 4px;
+            bottom: 3px;
+            font-size: 9px;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .controls-panel {
+            position: absolute;
+            left: 14px;
+            top: 86px;
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-button {
+            border: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #102030;
+            padding: 9px 12px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 5px 14px rgba(0, 0, 0, 0.14);
+        }
+
+        .control-button:hover {
+            background: white;
+        }
+
+        .debug-box {
+            position: absolute;
+            right: 14px;
+            top: 86px;
+            z-index: 50;
+            min-width: 280px;
+            max-width: 520px;
+            max-height: 360px;
+            overflow: auto;
+            background: rgba(0, 0, 0, 0.78);
+            color: #00ff9c;
+            padding: 10px 12px;
+            border-radius: 9px;
+            font-size: 13px;
+            line-height: 1.45;
+            white-space: normal;
+            display: none;
+        }
+
+        .debug-box.visible {
+            display: block;
+        }
+
+        .debug-box b {
+            color: white;
+        }
+
+        .debug-box code {
+            color: #9ee7ff;
+        }
+    </style>
+</head>
+
+<body>
+<main class="arsenal-page">
+    <nav class="top-nav">
+        <button class="nav-button" title="Home">⌂</button>
+        <button class="nav-button" title="Stats">▤</button>
+        <button class="nav-button" title="Inventory">▰</button>
+        <button class="nav-button" title="Shop">▥</button>
+        <button class="nav-button" title="Quests">☷</button>
+        <button class="nav-button" title="Ranking">♕</button>
+    </nav>
+
+    <section class="profile-header">
+        <div class="profile-orb"></div>
+        <div class="nameplate">
+            suja <span class="edit-icon">✎</span>
+        </div>
+    </section>
+
+    <div class="preview-message">
+        This is a preview build! Click here to view the original arsenal.
+    </div>
+
+    <div class="controls-panel">
+        <button class="control-button" id="playPauseBtn">Pause</button>
+        <button class="control-button" id="resetCameraBtn">Reset</button>
+        <button class="control-button" id="debugBtn">Debug</button>
+        <button class="control-button" id="reloadCharBtn">Reload Bot</button>
+    </div>
+
+    <div id="equipmentPreview"></div>
+    <div class="glow-ground"></div>
+
+    <div class="debug-box visible" id="debugBox">
+        Starting...
+    </div>
+
+    <div class="slot-dock">
+        <div class="slot-wrapper">
+            <button class="slot active" data-base="wing_540" data-label="Wing 540">
+                <img src="assets/icons/wing_540.png" alt="Wing 540" onerror="this.style.display='none'">
+                <span class="slot-label">Wing 540</span>
+            </button>
+
+            <button class="slot" data-base="aura_220" data-label="Aura 220">
+                <img src="assets/icons/aura_220.png" alt="Aura 220" onerror="this.style.display='none'">
+                <span class="slot-label">Aura 220</span>
+            </button>
+
+            <button class="slot" data-action="unequip-wing" data-label="Remove Wing">
+                <span class="slot-label">Remove Wing</span>
+            </button>
+
+            <button class="slot" data-action="unequip-aura" data-label="Remove Aura">
+                <span class="slot-label">Remove Aura</span>
+            </button>
+        </div>
+    </div>
+</main>
+
+<script type="module">
+    import { EquipmentPreview } from "./equipment-preview.js";
+
+    const ASSET_PATH = "assets/models";
+
+    const debugBox = document.getElementById("debugBox");
+    const playPauseBtn = document.getElementById("playPauseBtn");
+
+    function debug(message) {
+        console.log(message);
+        debugBox.innerHTML = message;
+    }
+
+    function appendDebug(message) {
+        console.log(message);
+        debugBox.innerHTML += "<br>" + message;
+    }
+
+    async function checkFile(path, required = true) {
+        try {
+            const response = await fetch(path, { cache: "no-store" });
+
+            if (response.ok) {
+                appendDebug(`[OK] <code>${path}</code>`);
+                return true;
+            }
+
+            if (required) {
+                appendDebug(`[FAIL] <code>${path}</code> HTTP ${response.status}`);
+            } else {
+                appendDebug(`[OPTIONAL MISSING] <code>${path}</code>`);
+            }
+
+            return false;
+        } catch (error) {
+            if (required) {
+                appendDebug(`[ERROR] <code>${path}</code> ${error.message}`);
+            } else {
+                appendDebug(`[OPTIONAL ERROR] <code>${path}</code>`);
+            }
+
+            return false;
+        }
+    }
+
+    async function checkRequiredFiles() {
+        debug("<b>Checking files...</b>");
+
+        const requiredFiles = [
+            "./equipment-preview.js",
+
+            `${ASSET_PATH}/hs_bone.bon.json`,
+            `${ASSET_PATH}/hs_000_head.bsc.json`,
+            `${ASSET_PATH}/hs_000_body.bsc.json`,
+            `${ASSET_PATH}/hs_000_arm.bsc.json`,
+
+            `${ASSET_PATH}/hs_000_head.ba0`,
+            `${ASSET_PATH}/hs_000_body.ba0`,
+            `${ASSET_PATH}/hs_000_arm.ba0`,
+
+            `${ASSET_PATH}/wing_540.obj.json`,
+            `${ASSET_PATH}/wing_540.oa0.png`,
+            `${ASSET_PATH}/wing_540.ob0.png`,
+
+            `${ASSET_PATH}/aura_220.obj.json`,
+            `${ASSET_PATH}/aura_220.oa0.png`
+        ];
+
+        const optionalFiles = [
+            `${ASSET_PATH}/hs_000_body.ba1`,
+            `${ASSET_PATH}/hs_000_arm.ba1`,
+            `${ASSET_PATH}/hs_000_arm.ba2`,
+            `assets/ui/arsenal_stage.png`
+        ];
+
+        let ok = true;
+
+        for (const file of requiredFiles) {
+            const fileOk = await checkFile(file, true);
+            if (!fileOk) ok = false;
+        }
+
+        for (const file of optionalFiles) {
+            await checkFile(file, false);
+        }
+
+        return ok;
+    }
+
+    const preview = new EquipmentPreview({
+        container: "#equipmentPreview",
+        assetPath: ASSET_PATH,
+        showGrid: false,
+        background: null,
+        autoPlay: true,
+        fps: 30,
+        cameraPosition: { x: 0, y: 48, z: 185 },
+        controlsTarget: { x: 0, y: 36, z: 0 }
+    });
+
+    window.preview = preview;
+
+    async function loadCharacterAndDefaultItems() {
+        debug("<b>Loading character...</b>");
+
+        try {
+            const characterData = await preview.loadDefaultCharacter();
+
+            if (!characterData) {
+                debugBox.classList.add("visible");
+                appendDebug("<b>Character failed to load.</b>");
+                return;
+            }
+
+            /*
+                Transformação igual ao viewer original do Ohka:
+                root.rotation.x = -Math.PI / 2
+                root.rotation.y = Math.PI
+                root.scale.x = -1
+
+                Isso é necessário porque o BSC vem em eixo nativo do jogo.
+            */
+            preview.characterRoot.rotation.x = -Math.PI / 2;
+            preview.characterRoot.rotation.y = Math.PI;
+            preview.characterRoot.rotation.z = 0;
+            preview.characterRoot.scale.set(-1.0, 1.0, 1.0);
+
+            appendDebug("<b>Character loaded.</b>");
+            appendDebug("BSC bind: single-bone skeleton mode");
+
+            if (preview.characterBoneMap) {
+                appendDebug(`Skeleton/attach bones: ${preview.characterBoneMap.size}`);
+                appendDebug(
+                    "Bone sample: " +
+                    Array.from(preview.characterBoneMap.keys())
+                        .slice(0, 20)
+                        .join(", ")
+                );
+
+                const sampleBones = ["bone01", "bone53", "boneleftsh", "bonerightsh", "bonewing"];
+                for (const bname of sampleBones) {
+                    const b = preview.characterBoneMap.get(bname);
+                    if (b) {
+                        appendDebug(
+                            `${bname} pos: ${b.position.x.toFixed(2)}, ${b.position.y.toFixed(2)}, ${b.position.z.toFixed(2)}`
+                        );
+                    }
+                }
+            }
+
+            appendDebug("<b>Equipping wing_540...</b>");
+
+            const wing = await preview.equipItemByBase("wing_540");
+
+            if (wing) {
+                appendDebug("[OK] wing_540 equipped");
+            } else {
+                appendDebug("[FAIL] wing_540 not equipped");
+            }
+
+        } catch (error) {
+            debugBox.classList.add("visible");
+            appendDebug("<b>JS Error while loading character:</b>");
+            appendDebug(`<code>${error.message}</code>`);
+            console.error(error);
+        }
+    }
+
+    async function equipBase(base) {
+        try {
+            appendDebug(`<b>Equipping ${base}...</b>`);
+
+            const object = await preview.equipItemByBase(base);
+
+            if (object) {
+                appendDebug(`[OK] ${base} equipped`);
+            } else {
+                appendDebug(`[FAIL] ${base} returned null`);
+            }
+        } catch (error) {
+            debugBox.classList.add("visible");
+            appendDebug(`<b>Error equipping ${base}:</b>`);
+            appendDebug(`<code>${error.message}</code>`);
+            console.error(error);
+        }
+    }
+
+    document.querySelectorAll(".slot").forEach(slot => {
+        slot.addEventListener("click", async () => {
+            const base = slot.dataset.base;
+            const action = slot.dataset.action;
+
+            document.querySelectorAll(".slot").forEach(s => s.classList.remove("active"));
+            slot.classList.add("active");
+
+            if (base) {
+                await equipBase(base);
+            }
+
+            if (action === "unequip-wing") {
+                preview.unequipSlot("wing");
+                appendDebug("[OK] Wing removed");
+            }
+
+            if (action === "unequip-aura") {
+                preview.unequipSlot("aura");
+                appendDebug("[OK] Aura removed");
+            }
+        });
+    });
+
+    playPauseBtn.addEventListener("click", () => {
+        preview.togglePlay();
+        if (preview.playing) preview.updateBonAnimation(0, true);
+        playPauseBtn.textContent = preview.playing ? "Pause" : "Play";
+    });
+
+    document.getElementById("resetCameraBtn").addEventListener("click", () => {
+        preview.resetCamera();
+    });
+
+    document.getElementById("debugBtn").addEventListener("click", () => {
+        debugBox.classList.toggle("visible");
+    });
+
+    document.getElementById("reloadCharBtn").addEventListener("click", async () => {
+        await loadCharacterAndDefaultItems();
+    });
+
+    window.addEventListener("keydown", event => {
+        if (event.code === "Space") {
+            event.preventDefault();
+            preview.togglePlay();
+            playPauseBtn.textContent = preview.playing ? "Pause" : "Play";
+        }
+
+        if (event.key.toLowerCase() === "r") {
+            preview.resetCamera();
+        }
+
+        if (event.key.toLowerCase() === "i") {
+            debugBox.classList.toggle("visible");
+        }
+    });
+
+    const filesOk = await checkRequiredFiles();
+
+    if (filesOk) {
+        await loadCharacterAndDefaultItems();
+    } else {
+        debugBox.classList.add("visible");
+        appendDebug("<br><b>Some required files are missing. Fix paths before loading.</b>");
+    }
+</script>
+</body>
+</html>
