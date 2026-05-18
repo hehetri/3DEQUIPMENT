@@ -544,6 +544,7 @@ export class EquipmentPreview {
 
         if (bonData) {
             this.createCharacterSkeletonFromBon(bonData);
+            this.createBonAnimationMixer(bonData);
         } else {
             console.warn("BON skeleton nÃ£o encontrado:", bonInfo.json);
             this.createVirtualAttachBonesOnly();
