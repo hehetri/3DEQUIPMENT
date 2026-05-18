@@ -50,9 +50,9 @@ const ITEM_3D_TYPES = {
 
 const DEFAULT_CHARACTER = {
     bone: "hs_bone",
-    head: "hs_000_head",
-    body: "hs_000_body",
-    arm: "hs_000_arm"
+    head: null,
+    body: "hs_trans_000",
+    arm: null
 };
 
 /*
@@ -523,22 +523,22 @@ export class EquipmentPreview {
         this.clearEquipment();
 
         const bone = parts.bone || DEFAULT_CHARACTER.bone;
-        const head = parts.head || DEFAULT_CHARACTER.head;
         const body = parts.body || DEFAULT_CHARACTER.body;
+        const head = parts.head || DEFAULT_CHARACTER.head;
         const arm = parts.arm || DEFAULT_CHARACTER.arm;
 
         const bonInfo = getBonFromBase(bone, { assetPath: this.assetPath });
-        const bodyInfo = getBscPartFromBase(body, { assetPath: this.assetPath });
-        const headInfo = getBscPartFromBase(head, { assetPath: this.assetPath });
-        const armInfo = getBscPartFromBase(arm, { assetPath: this.assetPath });
+        const bodyInfo = body ? getBscPartFromBase(body, { assetPath: this.assetPath }) : null;
+        const headInfo = head ? getBscPartFromBase(head, { assetPath: this.assetPath }) : null;
+        const armInfo = arm ? getBscPartFromBase(arm, { assetPath: this.assetPath }) : null;
 
         const bonData = await this.fetchJson(bonInfo.json);
-        const bodyData = await this.fetchJson(bodyInfo.json);
-        const headData = await this.fetchJson(headInfo.json);
-        const armData = await this.fetchJson(armInfo.json);
+        const bodyData = bodyInfo ? await this.fetchJson(bodyInfo.json) : null;
+        const headData = headInfo ? await this.fetchJson(headInfo.json) : null;
+        const armData = armInfo ? await this.fetchJson(armInfo.json) : null;
 
         if (!bodyData) {
-            console.warn("Body nÃ£o encontrado:", bodyInfo.json);
+            console.warn("Body nÃ£o encontrado:", bodyInfo?.json || body);
             return null;
         }
 
@@ -549,17 +549,26 @@ export class EquipmentPreview {
             this.createVirtualAttachBonesOnly();
         }
 
-        await this.addBscPart(bodyData, bodyInfo);
+        const loadedPartBases = new Set();
 
-        if (headData) {
-            await this.addBscPart(headData, headInfo);
-        } else {
+        await this.addBscPart(bodyData, bodyInfo);
+        loadedPartBases.add(bodyInfo.base);
+
+        if (headInfo && headData) {
+            if (!loadedPartBases.has(headInfo.base)) {
+                await this.addBscPart(headData, headInfo);
+                loadedPartBases.add(headInfo.base);
+            }
+        } else if (headInfo) {
             console.warn("Head nÃ£o encontrado:", headInfo.json);
         }
 
-        if (armData) {
-            await this.addBscPart(armData, armInfo);
-        } else {
+        if (armInfo && armData) {
+            if (!loadedPartBases.has(armInfo.base)) {
+                await this.addBscPart(armData, armInfo);
+                loadedPartBases.add(armInfo.base);
+            }
+        } else if (armInfo) {
             console.warn("Arm nÃ£o encontrado:", armInfo.json);
         }
 
