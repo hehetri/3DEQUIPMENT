@@ -403,6 +403,7 @@ export class EquipmentPreview {
         this.showGrid = options.showGrid ?? false;
         this.autoPlay = options.autoPlay ?? true;
         this.fps = options.fps || 30;
+        this.animationSpeed = options.animationSpeed ?? 0.45;
         this.attachBones = options.attachBones || DEFAULT_ATTACH_BONES;
 
         this.cameraPosition = options.cameraPosition || { x: 0, y: 48, z: 185 };
@@ -502,6 +503,9 @@ export class EquipmentPreview {
 
         this.characterRoot = new THREE.Group();
         this.characterRoot.name = "CharacterRoot";
+        this.characterRoot.rotation.x = -Math.PI / 2;
+        this.characterRoot.rotation.y = Math.PI;
+        this.characterRoot.scale.x = -1;
         this.root.add(this.characterRoot);
 
         this.equipmentRoot = new THREE.Group();
@@ -929,7 +933,7 @@ export class EquipmentPreview {
 
         const anim = this.bonAnimation;
 
-        this.bonAnimTime += delta;
+        this.bonAnimTime += delta * this.animationSpeed;
 
         const frameStep = Math.floor(this.bonAnimTime * anim.fps);
 
@@ -1298,8 +1302,8 @@ export class EquipmentPreview {
                     rotation.y = Math.PI
                     scale.x = -1
                 */
-                positions.push(-p.x, p.y, p.z);
-                normals.push(-n.x, n.y, n.z);
+                positions.push(p.x, p.y, p.z);
+                normals.push(n.x, n.y, n.z);
                 uvs.push(uv.u, uv.v);
             }
 
@@ -1316,8 +1320,8 @@ export class EquipmentPreview {
                 */
                 indices.push(
                     rawIndices[i],
-                    rawIndices[i + 2],
-                    rawIndices[i + 1]
+                    rawIndices[i + 1],
+                    rawIndices[i + 2]
                 );
             }
 
