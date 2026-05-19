@@ -403,6 +403,7 @@ export class EquipmentPreview {
         this.showGrid = options.showGrid ?? false;
         this.autoPlay = options.autoPlay ?? true;
         this.fps = options.fps || 30;
+        this.animationSpeed = options.animationSpeed ?? 0.45;
         this.attachBones = options.attachBones || DEFAULT_ATTACH_BONES;
 
         this.cameraPosition = options.cameraPosition || { x: 0, y: 48, z: 185 };
@@ -502,6 +503,9 @@ export class EquipmentPreview {
 
         this.characterRoot = new THREE.Group();
         this.characterRoot.name = "CharacterRoot";
+        this.characterRoot.rotation.x = -Math.PI / 2;
+        this.characterRoot.rotation.y = Math.PI;
+        this.characterRoot.scale.x = -1;
         this.root.add(this.characterRoot);
 
         this.equipmentRoot = new THREE.Group();
@@ -523,43 +527,53 @@ export class EquipmentPreview {
         this.clearEquipment();
 
         const bone = parts.bone || DEFAULT_CHARACTER.bone;
-        const head = parts.head || DEFAULT_CHARACTER.head;
         const body = parts.body || DEFAULT_CHARACTER.body;
+        const head = parts.head || DEFAULT_CHARACTER.head;
         const arm = parts.arm || DEFAULT_CHARACTER.arm;
 
         const bonInfo = getBonFromBase(bone, { assetPath: this.assetPath });
-        const bodyInfo = getBscPartFromBase(body, { assetPath: this.assetPath });
-        const headInfo = getBscPartFromBase(head, { assetPath: this.assetPath });
-        const armInfo = getBscPartFromBase(arm, { assetPath: this.assetPath });
+        const bodyInfo = body ? getBscPartFromBase(body, { assetPath: this.assetPath }) : null;
+        const headInfo = head ? getBscPartFromBase(head, { assetPath: this.assetPath }) : null;
+        const armInfo = arm ? getBscPartFromBase(arm, { assetPath: this.assetPath }) : null;
 
         const bonData = await this.fetchJson(bonInfo.json);
-        const bodyData = await this.fetchJson(bodyInfo.json);
-        const headData = await this.fetchJson(headInfo.json);
-        const armData = await this.fetchJson(armInfo.json);
+        const bodyData = bodyInfo ? await this.fetchJson(bodyInfo.json) : null;
+        const headData = headInfo ? await this.fetchJson(headInfo.json) : null;
+        const armData = armInfo ? await this.fetchJson(armInfo.json) : null;
 
         if (!bodyData) {
-            console.warn("Body nÃ£o encontrado:", bodyInfo.json);
+            console.warn("Body nÃ£o encontrado:", bodyInfo?.json || body);
             return null;
         }
 
         if (bonData) {
             this.createCharacterSkeletonFromBon(bonData);
+            this.createBonAnimationMixer(bonData);
         } else {
             console.warn("BON skeleton nÃ£o encontrado:", bonInfo.json);
             this.createVirtualAttachBonesOnly();
         }
 
-        await this.addBscPart(bodyData, bodyInfo);
+        const loadedPartBases = new Set();
 
-        if (headData) {
-            await this.addBscPart(headData, headInfo);
-        } else {
+        await this.addBscPart(bodyData, bodyInfo);
+        loadedPartBases.add(bodyInfo.base);
+
+        if (headInfo && headData) {
+            if (!loadedPartBases.has(headInfo.base)) {
+                await this.addBscPart(headData, headInfo);
+                loadedPartBases.add(headInfo.base);
+            }
+        } else if (headInfo) {
             console.warn("Head nÃ£o encontrado:", headInfo.json);
         }
 
-        if (armData) {
-            await this.addBscPart(armData, armInfo);
-        } else {
+        if (armInfo && armData) {
+            if (!loadedPartBases.has(armInfo.base)) {
+                await this.addBscPart(armData, armInfo);
+                loadedPartBases.add(armInfo.base);
+            }
+        } else if (armInfo) {
             console.warn("Arm nÃ£o encontrado:", armInfo.json);
         }
 
@@ -919,7 +933,7 @@ export class EquipmentPreview {
 
         const anim = this.bonAnimation;
 
-        this.bonAnimTime += delta;
+        this.bonAnimTime += delta * this.animationSpeed;
 
         const frameStep = Math.floor(this.bonAnimTime * anim.fps);
 
@@ -1288,8 +1302,8 @@ export class EquipmentPreview {
                     rotation.y = Math.PI
                     scale.x = -1
                 */
-                positions.push(-p.x, p.y, p.z);
-                normals.push(-n.x, n.y, n.z);
+                positions.push(p.x, p.y, p.z);
+                normals.push(n.x, n.y, n.z);
                 uvs.push(uv.u, uv.v);
             }
 
@@ -1306,8 +1320,8 @@ export class EquipmentPreview {
                 */
                 indices.push(
                     rawIndices[i],
-                    rawIndices[i + 2],
-                    rawIndices[i + 1]
+                    rawIndices[i + 1],
+                    rawIndices[i + 2]
                 );
             }
 
